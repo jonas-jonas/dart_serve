@@ -10,6 +10,9 @@ class Server {
   int port;
   VirtualDirectory _staticFiles;
 
+  String certificateChain = './cert.pem';
+  String serverKey = './key.pem';
+
   Server({
     this.port = 8080,
     InternetAddress address,
@@ -18,8 +21,11 @@ class Server {
         this._staticFiles = VirtualDirectory(directory ?? '.');
 
   Future<void> start() async {
-    var server = await HttpServer.bind(_address, port);
-    print('Listening on http://${_address.address}:${server.port}');
+    var serverContext = SecurityContext(); /*1*/
+    serverContext.useCertificateChain(certificateChain); /*2*/
+    serverContext.usePrivateKey(serverKey); /*3*/
+    var server = await HttpServer.bindSecure(_address, port, serverContext);
+    log.info('Listening on https://${_address.address}:${server.port}');
 
     _staticFiles.allowDirectoryListing = true;
     _staticFiles.directoryHandler = _directoryHandler;
